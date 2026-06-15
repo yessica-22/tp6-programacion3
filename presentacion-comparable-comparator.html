@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparable y Comparator en Java — Programación III — UNLaR</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --text: #e0e0e0;
+    --accent: #00b4d8;
+    --accent2: #e63946;
+    --accent3: #f4a261;
+    --code-bg: #0d1117;
+    --code-text: #e6edf3;
+    --kw: #ff7b72;
+    --type: #79c0ff;
+    --str: #a5d6ff;
+    --num: #ffa198;
+    --cmt: #8b949e;
+    --method: #d2a8ff;
+    --ann: #ffa198;
+    --border: #30363d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #presentation {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+    padding: 4vh 6vw;
+    flex-direction: column;
+    justify-content: center;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .slide.active { display: flex; }
+
+  .slide.portada {
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+  .slide.portada h1 { font-size: 4.2vw; color: var(--accent); margin-bottom: 1.5vh; }
+  .slide.portada h2 { font-size: 2.2vw; color: var(--text); font-weight: 400; margin-bottom: 4vh; }
+  .slide.portada .meta { font-size: 1.5vw; color: #8b949e; display: flex; flex-direction: column; gap: 1vh; }
+
+  h1 { font-size: 3vw; color: var(--accent); margin-bottom: 3vh; }
+  h2 { font-size: 2.2vw; color: var(--accent); margin-bottom: 2vh; }
+  h3 { font-size: 1.7vw; color: var(--accent3); margin-bottom: 1.5vh; }
+
+  p, li { font-size: 1.6vw; line-height: 1.6; margin-bottom: 1.2vh; }
+  ul { margin-left: 3vw; }
+
+  .big-text {
+    font-size: 2.6vw; color: var(--accent2); font-weight: bold;
+    text-align: center; margin: 3vh 0;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2vh 2vw;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 1.35vw;
+    line-height: 1.6;
+    overflow: hidden;
+    margin: 1.5vh 0;
+    color: var(--code-text);
+    white-space: pre;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-size: 1.3vw;
+    color: var(--accent3);
+  }
+
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+  .code-file {
+    font-size: 1vw; color: var(--cmt); margin-bottom: -1.5vh;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    padding-left: 0.5vw;
+  }
+
+  .error-box {
+    background: #2d1114; border: 2px solid var(--accent2); border-radius: 8px;
+    padding: 2vh 2vw; margin: 2vh 0;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 1.25vw; color: #ff9999;
+  }
+
+  .comparison-table {
+    width: 100%; border-collapse: collapse; margin: 2.5vh 0; font-size: 1.4vw;
+  }
+  .comparison-table th {
+    background: var(--surface); color: var(--accent);
+    padding: 1.5vh 1.5vw; text-align: left; border: 1px solid var(--border);
+  }
+  .comparison-table td {
+    padding: 1.2vh 1.5vw; border: 1px solid var(--border);
+  }
+  .comparison-table tr:nth-child(even) td { background: rgba(22, 33, 62, 0.5); }
+
+  .diagram {
+    background: var(--surface); border-radius: 12px;
+    padding: 2.5vh 3vw; margin: 2.5vh 0; text-align: center;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 1.4vw; line-height: 1.8;
+  }
+  .diagram .box {
+    display: inline-block; border: 2px solid var(--accent); border-radius: 8px;
+    padding: 1vh 1.5vw; margin: 0.5vh 0.8vw;
+  }
+  .diagram .label { font-size: 1vw; color: var(--cmt); display: block; }
+
+  #controls {
+    position: fixed; bottom: 3vh; right: 3vw;
+    display: flex; gap: 1vw; z-index: 100;
+  }
+  #controls button {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.2vh 2vw; font-size: 1.3vw; cursor: pointer;
+    transition: background 0.2s;
+  }
+  #controls button:hover { background: var(--accent); color: #1a1a2e; }
+
+  #slide-indicator {
+    position: fixed; bottom: 3vh; left: 3vw;
+    font-size: 1.3vw; color: var(--cmt); z-index: 100;
+  }
+
+  .syn-kw { color: var(--kw); }
+  .syn-type { color: var(--type); }
+  .syn-str { color: var(--str); }
+  .syn-num { color: var(--num); }
+  .syn-cmt { color: var(--cmt); }
+  .syn-method { color: var(--method); }
+  .syn-ann { color: var(--ann); }
+
+  .note {
+    background: #1a2a1a; border-left: 4px solid #2ea043;
+    padding: 1.5vh 2vw; margin: 2vh 0; border-radius: 0 8px 8px 0;
+    font-size: 1.4vw; line-height: 1.5;
+  }
+  .warning {
+    background: #2d1a1a; border-left: 4px solid var(--accent2);
+    padding: 1.5vh 2vw; margin: 2vh 0; border-radius: 0 8px 8px 0;
+    font-size: 1.4vw; line-height: 1.5;
+  }
+  .question {
+    background: rgba(0,180,216,0.1); border-left: 4px solid var(--accent);
+    padding: 1.5vh 2vw; margin: 2.5vh 0; border-radius: 0 8px 8px 0;
+    font-size: 1.5vw; font-style: italic; line-height: 1.5;
+  }
+
+  .two-col {
+    display: flex; gap: 3vw; align-items: flex-start;
+  }
+  .two-col > div { flex: 1; }
+
+  .flex-wrap { display: flex; gap: 2vw; }
+  .flex-wrap > div { flex: 1; }
+
+  @media (max-aspect-ratio: 16/9) {
+    h1 { font-size: 3.5vw; }
+    p, li { font-size: 1.8vw; }
+    pre { font-size: 1.5vw; }
+  }
+</style>
+</head>
+<body>
+
+<div id="presentation">
+
+  <!-- SLIDE 1: Portada -->
+  <div class="slide portada active">
+    <h1>Ordenamiento de objetos:<br>Comparable &amp; Comparator</h1>
+    <h2>Polimorfismo en acci&oacute;n</h2>
+    <div class="meta">
+      <span>Programaci&oacute;n III — Paradigma Orientado a Objetos</span>
+      <span>Universidad Nacional de La Rioja</span>
+      <span>2026</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: El problema -->
+  <div class="slide">
+    <h1>El problema</h1>
+    <p>Tenemos una lista de nuestros propios objetos y queremos ordenarla:</p>
+    <pre><span class="syn-type">List</span>&lt;<span class="syn-type">Estudiante</span>&gt; lista = <span class="syn-kw">new</span> <span class="syn-type">ArrayList</span>&lt;&gt;();
+lista.add(<span class="syn-kw">new</span> <span class="syn-type">Estudiante</span>(<span class="syn-str">"LU-001"</span>, <span class="syn-str">"Martín"</span>, <span class="syn-num">8.5</span>, <span class="syn-num">22</span>, <span class="syn-num">18</span>));
+lista.add(<span class="syn-kw">new</span> <span class="syn-type">Estudiante</span>(<span class="syn-str">"LU-002"</span>, <span class="syn-str">"Valeria"</span>, <span class="syn-num">7.2</span>, <span class="syn-num">20</span>, <span class="syn-num">15</span>));
+
+<span class="syn-type">Collections</span>.sort(lista);  <span class="syn-cmt">// ❌ No compila</span></pre>
+
+    <div class="error-box">
+<span class="syn-type">The method sort(List&lt;T&gt;) in the type Collections</span>
+  <span class="syn-type">is not applicable for the arguments</span>
+  <span class="syn-type">(ArrayList&lt;Estudiante&gt;)</span>
+    </div>
+
+    <div class="question">
+      &iquest;C&oacute;mo sabe Java cu&aacute;l objeto va primero<br>
+      si <code>Estudiante</code> es una clase que inventamos nosotros?
+    </div>
+  </div>
+
+  <!-- SLIDE 3: La idea clave -->
+  <div class="slide">
+    <h1>La idea clave</h1>
+
+    <p><strong>Comparar es un comportamiento.</strong><br>
+    En POO, los comportamientos se modelan con interfaces.</p>
+
+    <div class="diagram">
+      <div class="box" style="border-color:var(--accent);">
+        <span class="syn-type">Comparable&lt;T&gt;</span>
+        <span class="label">"Me comparo con otro T"</span>
+      </div>
+      <span style="color:var(--accent3);font-size:2vw;">&#x27F7;</span>
+      <div class="box" style="border-color:var(--accent3);">
+        <span class="syn-type">Comparator&lt;T&gt;</span>
+        <span class="label">"Comparo dos objetos T"</span>
+      </div>
+    </div>
+
+    <h2>Esto es polimorfismo</h2>
+    <p>La misma operaci&oacute;n (<code>sort()</code>) produce distinto comportamiento<br>
+    seg&uacute;n qu&eacute; implementaci&oacute;n de la interfaz recibe.</p>
+  </div>
+
+  <!-- SLIDE 4: Comparable -->
+  <div class="slide">
+    <h1><code>Comparable&lt;T&gt;</code></h1>
+
+    <h3>El contrato de <code>compareTo(T otro)</code></h3>
+    <ul>
+      <li><strong>Negativo</strong> &rarr; <code>this</code> va <strong>antes</strong> que <code>otro</code></li>
+      <li><strong>Cero</strong> &rarr; son equivalentes seg&uacute;n ese criterio</li>
+      <li><strong>Positivo</strong> &rarr; <code>this</code> va <strong>despu&eacute;s</strong> que <code>otro</code></li>
+    </ul>
+
+    <h3>Implementaci&oacute;n en <code>Estudiante</code></h3>
+    <div class="code-file">Estudiante.java</div>
+    <pre><span class="syn-kw">public class</span> <span class="syn-type">Estudiante</span>
+        <span class="syn-kw">implements</span> <span class="syn-type">Comparable</span>&lt;<span class="syn-type">Estudiante</span>&gt; {
+
+    <span class="syn-kw">private</span> <span class="syn-type">String</span> legajo;
+    <span class="syn-kw">private</span> <span class="syn-type">String</span> nombre;
+    <span class="syn-kw">private</span> <span class="syn-type">double</span> promedio;
+    <span class="syn-kw">private</span> <span class="syn-type">int</span> edad;
+    <span class="syn-kw">private</span> <span class="syn-type">int</span> materiasAprobadas;
+
+    <span class="syn-ann">@Override</span>
+    <span class="syn-kw">public int</span> <span class="syn-method">compareTo</span>(<span class="syn-type">Estudiante</span> otro) {
+        <span class="syn-kw">return</span> <span class="syn-type">Double</span>
+            .compare(otro.promedio, <span class="syn-kw">this</span>.promedio);
+    }
+}</pre>
+    <p style="font-size:1.1vw;color:var(--cmt);">
+      Orden natural: promedio descendente.
+      <strong>Siempre</strong> usar <code>Double.compare()</code>, nunca resta.
+    </p>
+  </div>
+
+  <!-- SLIDE 5: Orden natural -->
+  <div class="slide">
+    <h1>Orden natural</h1>
+
+    <p>Muchas clases del JDK ya implementan <code>Comparable</code>:</p>
+    <ul>
+      <li><code>String</code> &rarr; orden lexicogr&aacute;fico</li>
+      <li><code>Integer</code>, <code>Double</code>, <code>BigDecimal</code> &rarr; orden num&eacute;rico</li>
+      <li><code>LocalDate</code>, <code>LocalDateTime</code> &rarr; orden cronol&oacute;gico</li>
+    </ul>
+
+    <h2 style="color:var(--accent2);margin-top:3vh;">La gran limitaci&oacute;n</h2>
+    <p><code>Comparable</code> define <strong>un solo criterio</strong><br>
+    para toda la vida de la clase.</p>
+    <ul>
+      <li>No pod&eacute;s cambiar el criterio sin recompilar</li>
+      <li>No pod&eacute;s tener dos &oacute;rdenes naturales a la vez</li>
+      <li>&iquest;Qu&eacute; hac&eacute;s si no pod&eacute;s tocar la clase?</li>
+    </ul>
+
+    <div class="big-text">Un solo criterio no alcanza</div>
+  </div>
+
+  <!-- SLIDE 6: Comparator con lambdas y comparing() -->
+  <div class="slide">
+    <h1><code>Comparator&lt;T&gt;</code></h1>
+    <p>Estrategia <strong>externa</strong> a la clase de dominio.<br>
+    <code>Estudiante</code> no se modifica. Se define con una lambda o un method reference.</p>
+
+    <h3>Con lambda expl&iacute;cita</h3>
+    <pre>(a, b) -> <span class="syn-type">Integer</span>.compare(a.getEdad(), b.getEdad())</pre>
+
+    <h3 style="margin-top:2vh;">Con <code>Comparator.comparing()</code></h3>
+    <pre><span class="syn-type">Comparator</span>.comparing(<span class="syn-type">Estudiante</span>::getEdad)
+<span class="syn-type">Comparator</span>.comparing(<span class="syn-type">Estudiante</span>::getNombre)
+<span class="syn-type">Comparator</span>.comparing(<span class="syn-type">Estudiante</span>::getPromedio)</pre>
+
+    <h3 style="margin-top:2vh;">As&iacute; se usa</h3>
+    <pre>lista.sort(<span class="syn-type">Comparator</span>.comparing(<span class="syn-type">Estudiante</span>::getEdad));
+lista.sort((a, b) -> <span class="syn-type">Integer</span>.compare(a.materiasAprobadas, b.materiasAprobadas));</pre>
+
+    <div class="note">
+      <code>Comparator.comparing()</code> recibe una <strong>funci&oacute;n extractora</strong><br>
+      (qu&eacute; atributo comparar) y devuelve el comparator listo para usar.<br>
+      Pod&eacute;s crear <strong>infinitos</strong> criterios sin tocar el dominio.
+    </div>
+  </div>
+
+  <!-- SLIDE 7: thenComparing y reversed -->
+  <div class="slide">
+    <h1>Encadenamiento y orden inverso</h1>
+
+    <h3>Desempate con <code>thenComparing()</code></h3>
+    <pre><span class="syn-type">Comparator</span>&lt;<span class="syn-type">Estudiante</span>&gt; criterio =
+    <span class="syn-type">Comparator</span>
+        .comparing(<span class="syn-type">Estudiante</span>::getPromedio)
+        .reversed()
+        .thenComparing(<span class="syn-type">Estudiante</span>::getNombre);</pre>
+
+    <h3 style="margin-top:2vh;">Orden inverso con <code>reversed()</code></h3>
+    <pre><span class="syn-cmt">// Ascendente por promedio (menor a mayor)</span>
+<span class="syn-type">Comparator</span>.comparing(<span class="syn-type">Estudiante</span>::getPromedio)
+
+<span class="syn-cmt">// Descendente por promedio (mayor a menor)</span>
+<span class="syn-type">Comparator</span>
+    .comparing(<span class="syn-type">Estudiante</span>::getPromedio)
+    .reversed()</pre>
+
+    <div class="note">
+      <code>thenComparing()</code> <strong>solo se ejecuta si hay empate</strong><br>
+      en el criterio anterior. Ideal para tie-breakers.
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Comparable vs Comparator -->
+  <div class="slide">
+    <h1>Comparable vs Comparator</h1>
+
+    <table class="comparison-table">
+      <tr>
+        <th></th>
+        <th><code>Comparable&lt;T&gt;</code></th>
+        <th><code>Comparator&lt;T&gt;</code></th>
+      </tr>
+      <tr>
+        <td><strong>Paquete</strong></td>
+        <td><code>java.lang</code></td>
+        <td><code>java.util</code></td>
+      </tr>
+      <tr>
+        <td><strong>M&eacute;todo</strong></td>
+        <td><code>compareTo(T o)</code></td>
+        <td><code>compare(T a, T b)</code></td>
+      </tr>
+      <tr>
+        <td><strong>Criterios posibles</strong></td>
+        <td>1 solo (el natural)</td>
+        <td>Infinitos</td>
+      </tr>
+      <tr>
+        <td><strong>&iquest;Modifica la clase?</strong></td>
+        <td>S&iacute;</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><strong>Acoplamiento</strong></td>
+        <td>Alto</td>
+        <td>Bajo</td>
+      </tr>
+      <tr>
+        <td><strong>&iquest;Cu&aacute;ndo?</strong></td>
+        <td>Hay un orden "obvio"<br>para ese tipo</td>
+        <td>M&uacute;ltiples criterios,<br>clase de terceros,<br>no queremos tocar el dominio</td>
+      </tr>
+    </table>
+
+    <div class="question" style="font-size:1.3vw;">
+      &iquest;Vale la pena modificar <code>compareTo()</code><br>
+      cada vez que aparece un nuevo requisito de orden?
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Anti-patrón de la resta -->
+  <div class="slide">
+    <h1>&#9888;&#65039; El anti-patr&oacute;n de la resta</h1>
+
+    <div class="warning">
+      &#10060; <strong>Nunca uses la resta para comparar n&uacute;meros</strong>
+    </div>
+
+    <pre><span class="syn-cmt">// ❌ PELIGROSO: parece tentador, pero falla</span>
+(a, b) -> a.getEdad() - b.getEdad()</pre>
+
+    <h3>&iquest;Por qu&eacute; falla?</h3>
+    <p><strong>Overflow de enteros:</strong></p>
+    <pre><span class="syn-type">Integer</span>.MAX_VALUE - (-<span class="syn-num">1</span>)
+    = -<span class="syn-num">2147483648</span>  <span class="syn-cmt">// OVERFLOW → resultado negativo</span></pre>
+
+    <p>Le est&aacute;s diciendo a Java que<br>
+    <code>2147483647 &lt; -1</code>, lo cual es <strong>falso</strong>.</p>
+
+    <p>Esto <strong>rompe el contrato</strong> de <code>compare</code>:<br>
+    transitividad, simetr&iacute;a y consistencia.</p>
+  </div>
+
+  <!-- SLIDE 10: Anti-patrón — solución -->
+  <div class="slide">
+    <h1>La soluci&oacute;n correcta</h1>
+
+    <h3>Para <code>int</code></h3>
+    <pre><span class="syn-cmt">// ✅ CORRECTO</span>
+(a, b) -> <span class="syn-type">Integer</span>.compare(a.getEdad(), b.getEdad())</pre>
+
+    <h3 style="margin-top:2vh;">Para <code>double</code></h3>
+    <pre><span class="syn-cmt">// ✅ CORRECTO</span>
+(a, b) -> <span class="syn-type">Double</span>.compare(a.getPromedio(), b.getPromedio())</pre>
+
+    <h3 style="margin-top:2vh;">Para <code>long</code></h3>
+    <pre><span class="syn-cmt">// ✅ CORRECTO</span>
+(a, b) -> <span class="syn-type">Long</span>.compare(a.getValor(), b.getValor())</pre>
+
+    <div class="note" style="margin-top:3vh;">
+      <code>Integer.compare()</code>, <code>Double.compare()</code> y
+      <code>Long.compare()</code> manejan <strong>todos</strong> los casos,
+      incluyendo <code>MAX_VALUE</code> y <code>MIN_VALUE</code>.
+    </div>
+  </div>
+
+  <!-- SLIDE 11: Hacia Spring Boot -->
+  <div class="slide">
+    <h1>Hacia Spring Boot</h1>
+
+    <div class="diagram" style="line-height:2.4;font-size:1.25vw;">
+      <div class="box" style="border-color:var(--accent);">
+        <strong>Controller</strong>
+        <span class="label">GET /api/estudiantes
+        ?sortBy=edad&amp;order=desc</span>
+      </div>
+      <div style="color:var(--accent3);font-size:2vw;margin:0.5vh 0;">&#11015;</div>
+      <div class="box" style="border-color:var(--accent3);">
+        <strong>Service</strong>
+        <span class="label">Map&lt;String, Comparator&gt;
+        .get("edad").reversed()</span>
+      </div>
+      <div style="color:var(--accent3);font-size:2vw;margin:0.5vh 0;">&#11015;</div>
+      <div class="box" style="border-color:#2ea043;">
+        <strong>Comparator</strong>
+        <span class="label">comparing(Estudiante::getEdad)</span>
+      </div>
+      <div style="color:var(--accent3);font-size:2vw;margin:0.5vh 0;">&#11015;</div>
+      <div style="display:inline-block;padding:1vh 1.5vw;
+           border:1px solid var(--border);border-radius:6px;
+           color:var(--str);">JSON ordenado</div>
+    </div>
+
+    <p style="font-size:1.3vw;color:var(--cmt);margin-top:2vh;text-align:center;">
+      El controller recibe <code>sortBy</code> y <code>order</code>,<br>
+      el service elige el comparator del mapa = <strong>patr&oacute;n Strategy</strong>.
+    </p>
+  </div>
+
+  <!-- SLIDE 12: Spring Boot — request/response -->
+  <div class="slide">
+    <h1>Request y respuesta</h1>
+
+    <pre><span class="syn-cmt">// GET /api/estudiantes?sortBy=promedio&amp;order=desc</span>
+
+[
+  { <span class="syn-str">"legajo"</span>: <span class="syn-str">"LU-004"</span>, <span class="syn-str">"nombre"</span>: <span class="syn-str">"Camila"</span>,  <span class="syn-str">"promedio"</span>: <span class="syn-num">9.1</span> },
+  { <span class="syn-str">"legajo"</span>: <span class="syn-str">"LU-005"</span>, <span class="syn-str">"nombre"</span>: <span class="syn-str">"Lucas"</span>,    <span class="syn-str">"promedio"</span>: <span class="syn-num">9.1</span> },
+  { <span class="syn-str">"legajo"</span>: <span class="syn-str">"LU-008"</span>, <span class="syn-str">"nombre"</span>: <span class="syn-str">"Florencia"</span>, <span class="syn-str">"promedio"</span>: <span class="syn-num">8.9</span> },
+  { <span class="syn-str">"legajo"</span>: <span class="syn-str">"LU-001"</span>, <span class="syn-str">"nombre"</span>: <span class="syn-str">"Martín"</span>,   <span class="syn-str">"promedio"</span>: <span class="syn-num">8.5</span> },
+  ...
+]</pre>
+
+    <p style="font-size:1.3vw;color:var(--cmt);margin-top:2vh;">
+      El <code>@RestController</code> recibe los query params y delega<br>
+      en el <code>@Service</code>, que elige el comparator del mapa.
+    </p>
+
+    <div class="note" style="margin-top:3vh;">
+      El controller no contiene l&oacute;gica de selecci&oacute;n de criterios.<br>
+      Toda esa responsabilidad vive en el service = <strong>Strategy</strong>.
+    </div>
+  </div>
+
+  <!-- SLIDE 13: Spring Boot — manejo de errores -->
+  <div class="slide">
+    <h1>Manejo de errores</h1>
+
+    <p>Si el cliente manda un <code>sortBy</code> que no existe:</p>
+
+    <pre><span class="syn-cmt">// GET /api/estudiantes?sortBy=colorFavorito</span>
+<span class="syn-cmt">// → HTTP 400 Bad Request</span>
+{
+  <span class="syn-str">"error"</span>: <span class="syn-str">"Criterio inv&aacute;lido"</span>,
+  <span class="syn-str">"recibido"</span>: <span class="syn-str">"colorFavorito"</span>,
+  <span class="syn-str">"validos"</span>: [
+    <span class="syn-str">"promedio"</span>, <span class="syn-str">"edad"</span>,
+    <span class="syn-str">"nombre"</span>, <span class="syn-str">"materiasAprobadas"</span>,
+    <span class="syn-str">"legajo"</span>
+  ]
+}</pre>
+
+    <p style="font-size:1.3vw;color:var(--cmt);margin-top:2vh;">
+      El service lanza una excepci&oacute;n si la clave no est&aacute; en el mapa.<br>
+      El controller la convierte en <code>ResponseEntity.badRequest()</code>.
+    </p>
+
+    <div class="note">
+      No usamos <code>switch</code> ni <code>if-else</code> para elegir el comparator.<br>
+      Usamos un <code>Map&lt;String, Comparator&lt;Estudiante&gt;&gt;</code>.
+    </div>
+  </div>
+
+  <!-- SLIDE 14: El TP -->
+  <div class="slide" style="justify-content:flex-start;padding-top:4vh;">
+    <h1>El Trabajo Pr&aacute;ctico</h1>
+
+    <div class="flex-wrap">
+      <div>
+        <h3>Parte 1 — El problema</h3>
+        <p style="font-size:1.15vw;">POJO + <code>sort()</code> fallido + explicar por qu&eacute;</p>
+
+        <h3>Parte 2 — Comparable</h3>
+        <p style="font-size:1.15vw;">Implementar <code>compareTo()</code>, justificar orden natural</p>
+
+        <h3>Parte 3 — Comparator</h3>
+        <p style="font-size:1.15vw;">Cl&aacute;sicos &rarr; lambdas &rarr; <code>comparing()</code> + <code>thenComparing()</code> &rarr; bug de la resta</p>
+
+        <h3>Parte 4 — Spring Boot</h3>
+        <p style="font-size:1.15vw;">Controller REST + Service con <code>Map</code> de estrategias</p>
+
+        <h3>Parte 5 — Opcional &#10024;</h3>
+        <p style="font-size:1.15vw;">Orden multinivel / JUnit 5 / <code>Collator</code></p>
+      </div>
+      <div style="flex:0 0 1px;background:var(--border);"></div>
+      <div style="flex:0.8;">
+        <h3>Entregables</h3>
+        <ul style="font-size:1.15vw;">
+          <li>Proyecto Spring Boot (repo Git)</li>
+          <li><code>RESPUESTAS.md</code> (5 preguntas)</li>
+          <li>Commits incrementales</li>
+        </ul>
+
+        <h3 style="margin-top:2vh;">Cierre</h3>
+        <ul style="font-size:1.15vw;">
+          <li>Comparar &rarr; comportamiento &rarr; interfaces</li>
+          <li><code>Comparable</code> = orden natural (1 criterio)</li>
+          <li><code>Comparator</code> = estrategias externas (N)</li>
+          <li>El service usa patr&oacute;n <strong>Strategy</strong></li>
+          <li><strong>Nunca restes para comparar</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:3vh;padding-top:2vh;border-top:1px solid var(--border);
+         font-size:1.1vw;color:var(--cmt);">
+      <strong>Bibliograf&iacute;a:</strong>
+      Baeldung — <em>Comparator and Comparable in Java</em> &middot;
+      Javadoc <code>Comparable</code> y <code>Comparator</code> &middot;
+      Spring Boot Reference
+    </div>
+
+    <div class="question" style="margin-top:2vh;font-size:1.4vw;">
+      &iquest;Preguntas? Arranquemos con el TP.
+    </div>
+  </div>
+
+</div>
+
+<div id="slide-indicator">slide 1 / 14</div>
+<div id="controls">
+  <button id="prev" title="Anterior (←)">← Anterior</button>
+  <button id="next" title="Siguiente (→)">Siguiente →</button>
+</div>
+
+<script>
+(function() {
+  var slides = document.querySelectorAll('.slide');
+  var total = slides.length;
+  var current = 0;
+  var indicator = document.getElementById('slide-indicator');
+
+  function showSlide(index) {
+    if (index < 0) index = 0;
+    if (index >= total) index = total - 1;
+    slides.forEach(function(s, i) {
+      s.classList.toggle('active', i === index);
+    });
+    current = index;
+    indicator.textContent = 'slide ' + (current + 1) + ' / ' + total;
+  }
+
+  document.getElementById('prev').addEventListener('click', function() {
+    showSlide(current - 1);
+  });
+  document.getElementById('next').addEventListener('click', function() {
+    showSlide(current + 1);
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      showSlide(current - 1);
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      showSlide(current + 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      showSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      showSlide(total - 1);
+    }
+  });
+
+  showSlide(0);
+})();
+</script>
+
+</body>
+</html>

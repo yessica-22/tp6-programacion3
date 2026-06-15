@@ -1,0 +1,46 @@
+package ar.edu.unlar.prog3.model;
+
+public class Estudiante implements Comparable<Estudiante> {
+    private String legajo;
+    private String nombre;
+    private double promedio;
+    private int edad;
+    private int cantidadMateriasAprobadas;
+
+    public Estudiante() {}
+
+    public Estudiante(String legajo, String nombre, double promedio, int edad, int cantidadMateriasAprobadas) {
+        this.legajo = legajo;
+        this.nombre = nombre;
+        this.promedio = promedio;
+        this.edad = edad;
+        this.cantidadMateriasAprobadas = cantidadMateriasAprobadas;
+    }
+
+    public String getLegajo() { return legajo; }
+    public void setLegajo(String legajo) { this.legajo = legajo; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public double getPromedio() { return promedio; }
+    public void setPromedio(double promedio) { this.promedio = promedio; }
+
+    public int getEdad() { return edad; }
+    public void setEdad(int edad) { this.edad = edad; }
+
+    public int getCantidadMateriasAprobadas() { return cantidadMateriasAprobadas; }
+    public void setCantidadMateriasAprobadas(int cantidadMateriasAprobadas) { this.cantidadMateriasAprobadas = cantidadMateriasAprobadas; }
+
+    @Override
+    public String toString() {
+        return String.format("Estudiante{legajo='%s', nombre='%s', promedio=%.2f, edad=%d, materias=%d}",
+                legajo, nombre, promedio, edad, cantidadMateriasAprobadas);
+    }
+
+    // Orden natural: promedio descendente (mayor primero)
+    @Override
+    public int compareTo(Estudiante o) {
+        return Double.compare(o.promedio, this.promedio);
+    }
+}
